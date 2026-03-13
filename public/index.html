@@ -1,149 +1,116 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Messenger</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f3f4f6;
-    }
+<meta charset="UTF-8">
+<title>My Messenger</title>
 
-    .app {
-      max-width: 900px;
-      margin: 20px auto;
-      background: white;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+<style>
+body{
+font-family:Arial;
+background:#f2f2f2;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
 
-    .header {
-      padding: 16px 20px;
-      font-size: 28px;
-      font-weight: bold;
-      border-bottom: 1px solid #e5e7eb;
-    }
+#login{
+background:white;
+padding:20px;
+border-radius:10px;
+}
 
-    #chat {
-      height: 420px;
-      overflow-y: auto;
-      padding: 16px;
-      background: #fafafa;
-    }
+#chat{
+display:none;
+width:600px;
+background:white;
+border-radius:10px;
+padding:20px;
+}
 
-    .message {
-      margin-bottom: 10px;
-      padding: 10px 12px;
-      background: #e8f0fe;
-      border-radius: 10px;
-      width: fit-content;
-      max-width: 80%;
-    }
+#messages{
+height:400px;
+overflow-y:auto;
+margin-bottom:10px;
+}
 
-    .system {
-      margin-bottom: 10px;
-      color: #6b7280;
-      font-style: italic;
-    }
+input{
+padding:10px;
+width:80%;
+}
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-      padding: 12px;
-      border-top: 1px solid #e5e7eb;
-      background: white;
-    }
-
-    #msg {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      outline: none;
-    }
-
-    #msg:focus {
-      border-color: #60a5fa;
-    }
-
-    button {
-      padding: 12px 18px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-  </style>
+button{
+padding:10px;
+}
+</style>
 </head>
+
 <body>
-  <div class="app">
-    <div class="header">My Messenger</div>
 
-    <div id="chat"></div>
+<div id="login">
+<h2>Введите имя</h2>
+<input id="username" placeholder="Ваше имя">
+<button onclick="enterChat()">Войти</button>
+</div>
 
-    <div class="input-row">
-      <input id="msg" type="text" placeholder="Напиши сообщение..." />
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
+<div id="chat">
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("msg");
-    const sendBtn = document.getElementById("sendBtn");
+<h2>My Messenger</h2>
 
-    function addSystemMessage(text) {
-      const div = document.createElement("div");
-      div.className = "system";
-      div.textContent = text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+<div id="messages"></div>
 
-    function addChatMessage(user, text) {
-      const div = document.createElement("div");
-      div.className = "message";
-      div.textContent = user + ": " + text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+<input id="messageInput" placeholder="Напиши сообщение...">
+<button onclick="sendMessage()">Send</button>
 
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
+</div>
 
-      socket.emit("message", text);
-      input.value = "";
-      input.focus();
-    }
+<script>
 
-    sendBtn.addEventListener("click", sendMessage);
+let ws
+let username=""
 
-    input.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        sendMessage();
-      }
-    });
+function enterChat(){
 
-    socket.on("message", function (data) {
-      addChatMessage(data.user, data.text);
-    });
+username=document.getElementById("username").value
 
-    socket.on("system", function (text) {
-      addSystemMessage(text);
-    });
-  </script>
+if(!username)return
+
+document.getElementById("login").style.display="none"
+document.getElementById("chat").style.display="block"
+
+connect()
+
+}
+
+function connect(){
+
+ws=new WebSocket(`ws://${location.host}`)
+
+ws.onmessage=(event)=>{
+
+const messages=document.getElementById("messages")
+
+const div=document.createElement("div")
+
+div.textContent=event.data
+
+messages.appendChild(div)
+
+}
+
+}
+
+function sendMessage(){
+
+const input=document.getElementById("messageInput")
+
+ws.send(username+": "+input.value)
+
+input.value=""
+
+}
+
+</script>
+
 </body>
 </html>
