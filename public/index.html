@@ -3,16 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <title>My Messenger</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eee;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.app{
+width:500px;
+background:white;
+border-radius:10px;
+padding:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.header{
+font-size:24px;
+margin-bottom:10px;
+}
+
+#chat{
+height:350px;
+overflow-y:auto;
+border:1px solid #ddd;
+padding:10px;
+margin-bottom:10px;
+border-radius:6px;
+background:#fafafa;
+}
+
+.message{
+background:#e3f2fd;
+padding:6px 10px;
+border-radius:8px;
+margin-bottom:6px;
+max-width:80%;
+}
+
+.input-row{
+display:flex;
+}
+
+#msg{
+flex:1;
+padding:8px;
+border:1px solid #ccc;
+border-radius:6px;
+}
+
+button{
+padding:8px 14px;
+margin-left:6px;
+background:#1d4ed8;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1e40af;
+}
+
+</style>
 </head>
 
 <body>
 
-<h2>My Messenger</h2>
+<div class="app">
+
+<div class="header">My Messenger</div>
 
 <div id="chat"></div>
 
-<input id="msg" placeholder="Напиши сообщение">
+<div class="input-row">
+<input id="msg" placeholder="Напиши сообщение..." />
 <button onclick="send()">Send</button>
+</div>
+
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 
@@ -20,13 +96,14 @@
 
 const socket = io()
 
+const chat = document.getElementById("chat")
+const input = document.getElementById("msg")
+
 let username = prompt("Введите ваше имя")
 
 function send(){
 
-let input = document.getElementById("msg")
-
-if(input.value==="") return
+if(input.value.trim()==="") return
 
 let text = username + ": " + input.value
 
@@ -39,11 +116,16 @@ input.value=""
 socket.on("chat message",(msg)=>{
 
 let div = document.createElement("div")
-
+div.className="message"
 div.textContent = msg
 
-document.getElementById("chat").appendChild(div)
+chat.appendChild(div)
+chat.scrollTop = chat.scrollHeight
 
+})
+
+input.addEventListener("keypress",(e)=>{
+if(e.key==="Enter") send()
 })
 
 </script>
