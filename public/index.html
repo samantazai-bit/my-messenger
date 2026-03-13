@@ -84,7 +84,7 @@ connect()
 
 function connect(){
 
-ws=new WebSocket(`ws://${location.host}`)
+ws=new WebSocket(`wss://${location.host}`)
 
 ws.onmessage=(event)=>{
 
