@@ -20,9 +20,15 @@ width:500px;
 background:white;
 border-radius:10px;
 padding:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
 
-#messages{
+.header{
+font-size:24px;
+margin-bottom:10px;
+}
+
+#chat{
 height:350px;
 overflow-y:auto;
 border:1px solid #ddd;
@@ -49,6 +55,7 @@ padding:8px;
 button{
 padding:8px 14px;
 margin-left:6px;
+cursor:pointer;
 }
 </style>
 
@@ -58,9 +65,9 @@ margin-left:6px;
 
 <div class="app">
 
-<h2>My Messenger</h2>
+<div class="header">My Messenger</div>
 
-<div id="messages"></div>
+<div id="chat"></div>
 
 <div class="input-row">
 <input id="msg" placeholder="Напиши сообщение..." />
@@ -75,7 +82,7 @@ margin-left:6px;
 
 const socket = io()
 
-const messages = document.getElementById("messages")
+const chat = document.getElementById("chat")
 const input = document.getElementById("msg")
 const sendBtn = document.getElementById("sendBtn")
 
@@ -87,8 +94,8 @@ const div = document.createElement("div")
 div.className="message"
 div.textContent=text
 
-messages.appendChild(div)
-messages.scrollTop = messages.scrollHeight
+chat.appendChild(div)
+chat.scrollTop = chat.scrollHeight
 
 }
 
