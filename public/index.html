@@ -22,6 +22,21 @@ padding:15px;
 font-size:20px;
 }
 
+#login{
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+flex-direction:column;
+gap:10px;
+}
+
+#chatPage{
+display:none;
+height:100vh;
+flex-direction:column;
+}
+
 #chat{
 flex:1;
 overflow-y:auto;
@@ -29,11 +44,28 @@ padding:15px;
 }
 
 .message{
+display:flex;
+align-items:center;
+margin-bottom:10px;
+}
+
+.avatar{
+width:35px;
+height:35px;
+border-radius:50%;
+background:#1d4ed8;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+margin-right:10px;
+font-weight:bold;
+}
+
+.bubble{
 background:white;
 padding:8px 12px;
 border-radius:10px;
-margin-bottom:8px;
-max-width:60%;
 box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -71,9 +103,15 @@ background:#1e40af;
 
 <body>
 
-<div class="header">
-My Messenger
+<div id="login">
+<h2>Введите имя</h2>
+<input id="nameInput" placeholder="Ваше имя">
+<button onclick="enterChat()">Войти</button>
 </div>
+
+<div id="chatPage">
+
+<div class="header">My Messenger</div>
 
 <div id="chat"></div>
 
@@ -82,22 +120,37 @@ My Messenger
 <button onclick="send()">Send</button>
 </div>
 
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
 
 const socket = io()
 
-const chat = document.getElementById("chat")
-const input = document.getElementById("msg")
+let username=""
 
-let username = prompt("Введите ваше имя")
+const chat=document.getElementById("chat")
+const input=document.getElementById("msg")
+
+function enterChat(){
+
+let name=document.getElementById("nameInput").value
+
+if(name.trim()==="") return
+
+username=name
+
+document.getElementById("login").style.display="none"
+document.getElementById("chatPage").style.display="flex"
+
+}
 
 function send(){
 
 if(input.value.trim()==="") return
 
-let text = username + ": " + input.value
+let text=username+": "+input.value
 
 socket.emit("chat message", text)
 
@@ -107,11 +160,19 @@ input.value=""
 
 socket.on("chat message",(msg)=>{
 
+let name=msg.split(":")[0]
+
+let avatar=name.charAt(0).toUpperCase()
+
 let div=document.createElement("div")
 div.className="message"
-div.textContent=msg
+
+div.innerHTML=
+"<div class='avatar'>"+avatar+"</div>"+
+"<div class='bubble'>"+msg+"</div>"
 
 chat.appendChild(div)
+
 chat.scrollTop=chat.scrollHeight
 
 })
