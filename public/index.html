@@ -15,13 +15,6 @@ display:flex;
 flex-direction:column;
 }
 
-.header{
-background:#1d4ed8;
-color:white;
-padding:15px;
-font-size:20px;
-}
-
 #login{
 display:flex;
 justify-content:center;
@@ -37,6 +30,13 @@ height:100vh;
 flex-direction:column;
 }
 
+.header{
+background:#1d4ed8;
+color:white;
+padding:15px;
+font-size:20px;
+}
+
 #chat{
 flex:1;
 overflow-y:auto;
@@ -50,16 +50,11 @@ margin-bottom:10px;
 }
 
 .avatar{
-width:35px;
-height:35px;
+width:40px;
+height:40px;
 border-radius:50%;
-background:#1d4ed8;
-color:white;
-display:flex;
-align-items:center;
-justify-content:center;
 margin-right:10px;
-font-weight:bold;
+object-fit:cover;
 }
 
 .bubble{
@@ -81,7 +76,6 @@ flex:1;
 padding:10px;
 border:1px solid #ccc;
 border-radius:20px;
-outline:none;
 }
 
 button{
@@ -94,18 +88,19 @@ border-radius:20px;
 cursor:pointer;
 }
 
-button:hover{
-background:#1e40af;
-}
-
 </style>
+
 </head>
 
 <body>
 
 <div id="login">
 <h2>Введите имя</h2>
+
 <input id="nameInput" placeholder="Ваше имя">
+
+<input type="file" id="avatarInput" accept="image/*">
+
 <button onclick="enterChat()">Войти</button>
 </div>
 
@@ -129,6 +124,7 @@ background:#1e40af;
 const socket = io()
 
 let username=""
+let avatar=""
 
 const chat=document.getElementById("chat")
 const input=document.getElementById("msg")
@@ -136,10 +132,15 @@ const input=document.getElementById("msg")
 function enterChat(){
 
 let name=document.getElementById("nameInput").value
+let file=document.getElementById("avatarInput").files[0]
 
 if(name.trim()==="") return
 
 username=name
+
+if(file){
+avatar=URL.createObjectURL(file)
+}
 
 document.getElementById("login").style.display="none"
 document.getElementById("chatPage").style.display="flex"
@@ -150,26 +151,31 @@ function send(){
 
 if(input.value.trim()==="") return
 
-let text=username+": "+input.value
-
-socket.emit("chat message", text)
+socket.emit("chat message",{
+user:username,
+text:input.value,
+avatar:avatar
+})
 
 input.value=""
 
 }
 
-socket.on("chat message",(msg)=>{
-
-let name=msg.split(":")[0]
-
-let avatar=name.charAt(0).toUpperCase()
+socket.on("chat message",(data)=>{
 
 let div=document.createElement("div")
 div.className="message"
 
-div.innerHTML=
-"<div class='avatar'>"+avatar+"</div>"+
-"<div class='bubble'>"+msg+"</div>"
+let img=document.createElement("img")
+img.className="avatar"
+img.src=data.avatar || ""
+
+let bubble=document.createElement("div")
+bubble.className="bubble"
+bubble.textContent=data.user + ": " + data.text
+
+div.appendChild(img)
+div.appendChild(bubble)
 
 chat.appendChild(div)
 
