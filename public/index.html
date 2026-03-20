@@ -343,41 +343,54 @@
     }
 
     socket.on("chat message", (data) => {
-      const row = document.createElement("div");
-      row.className = "message-row";
+  const row = document.createElement("div");
+  row.className = "message-row";
 
-      if (data.avatar) {
-        const img = document.createElement("img");
-        img.className = "avatar";
-        img.src = data.avatar;
-        img.alt = "avatar";
-        row.appendChild(img);
-      } else {
-        const fallback = document.createElement("div");
-        fallback.className = "avatar-letter";
-        fallback.textContent = data.user ? data.user[0].toUpperCase() : "?";
-        row.appendChild(fallback);
-      }
+  const isValidAvatar =
+    typeof data.avatar === "string" &&
+    data.avatar.startsWith("data:image/");
 
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
+  if (isValidAvatar) {
+    const img = document.createElement("img");
+    img.className = "avatar";
+    img.src = data.avatar;
+    img.alt = "avatar";
 
-      const name = document.createElement("div");
-      name.className = "name";
-      name.textContent = data.user;
+    img.onerror = () => {
+      img.remove();
 
-      const text = document.createElement("div");
-      text.className = "text";
-      text.textContent = data.text;
+      const fallback = document.createElement("div");
+      fallback.className = "avatar-letter";
+      fallback.textContent = data.user ? data.user[0].toUpperCase() : "?";
+      row.insertBefore(fallback, row.firstChild);
+    };
 
-      bubble.appendChild(name);
-      bubble.appendChild(text);
-      row.appendChild(bubble);
+    row.appendChild(img);
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "avatar-letter";
+    fallback.textContent = data.user ? data.user[0].toUpperCase() : "?";
+    row.appendChild(fallback);
+  }
 
-      chat.appendChild(row);
-      chat.scrollTop = chat.scrollHeight;
-    });
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
 
+  const name = document.createElement("div");
+  name.className = "name";
+  name.textContent = data.user;
+
+  const text = document.createElement("div");
+  text.className = "text";
+  text.textContent = data.text;
+
+  bubble.appendChild(name);
+  bubble.appendChild(text);
+  row.appendChild(bubble);
+
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+});
     msgInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") send();
     });
