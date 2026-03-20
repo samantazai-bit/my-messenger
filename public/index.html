@@ -62,7 +62,7 @@
       object-fit: cover;
       background: #dbeafe;
       border: 3px solid #bfdbfe;
-      display: block;
+      display: none;
     }
 
     .fake-avatar {
@@ -144,6 +144,7 @@
       font-size: 20px;
       font-weight: 700;
       box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      flex-shrink: 0;
     }
 
     #chat {
@@ -202,19 +203,13 @@
       color: #0f172a;
     }
 
-    .system {
-      text-align: center;
-      color: #64748b;
-      font-size: 13px;
-      margin: 10px 0 14px;
-    }
-
     .input-area {
       display: flex;
       gap: 10px;
       padding: 12px;
       background: white;
       border-top: 1px solid #dbe1ea;
+      flex-shrink: 0;
     }
 
     #msg {
@@ -238,6 +233,7 @@
       padding: 0 18px;
       font-weight: 700;
       cursor: pointer;
+      min-width: 78px;
     }
 
     .send-btn:hover {
@@ -254,7 +250,7 @@
 
       <div class="avatar-preview-wrap">
         <div id="defaultAvatar" class="fake-avatar">?</div>
-        <img id="avatarPreview" style="display:none;" alt="avatar preview" />
+        <img id="avatarPreview" alt="avatar preview" />
       </div>
 
       <div class="field">
@@ -297,20 +293,51 @@
     const msgInput = document.getElementById("msg");
 
     avatarInput.addEventListener("change", () => {
-  const file = avatarInput.files[0];
-  if (!file) return;
+      const file = avatarInput.files[0];
+      if (!file) return;
 
-  const reader = new FileReader();
+      const reader = new FileReader();
 
-  reader.onload = function (e) {
-    avatar = e.target.result; // base64 строка
-    avatarPreview.src = avatar;
-    avatarPreview.style.display = "block";
-    defaultAvatar.style.display = "none";
-  };
+      reader.onload = function (e) {
+        const img = new Image();
 
-  reader.readAsDataURL(file);
-});
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const maxSize = 128;
+
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxSize) {
+              height = height * (maxSize / width);
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = width * (maxSize / height);
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          avatar = canvas.toDataURL("image/jpeg", 0.7);
+
+          avatarPreview.src = avatar;
+          avatarPreview.style.display = "block";
+          defaultAvatar.style.display = "none";
+        };
+
+        img.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    });
 
     nameInput.addEventListener("input", () => {
       const val = nameInput.value.trim();
@@ -322,7 +349,6 @@
       if (!name) return;
 
       username = name;
-
       loginScreen.style.display = "none";
       chatPage.style.display = "flex";
       msgInput.focus();
@@ -331,6 +357,7 @@
     function send() {
       const text = msgInput.value.trim();
       if (!text) return;
+      if (!username) return;
 
       socket.emit("chat message", {
         user: username,
@@ -342,57 +369,63 @@
       msgInput.focus();
     }
 
-    socket.on("chat message", (data) => {
-  const row = document.createElement("div");
-  row.className = "message-row";
-
-  const isValidAvatar =
-    typeof data.avatar === "string" &&
-    data.avatar.startsWith("data:image/");
-
-  if (isValidAvatar) {
-    const img = document.createElement("img");
-    img.className = "avatar";
-    img.src = data.avatar;
-    img.alt = "avatar";
-
-    img.onerror = () => {
-      img.remove();
-
+    function createFallbackAvatar(userName) {
       const fallback = document.createElement("div");
       fallback.className = "avatar-letter";
-      fallback.textContent = data.user ? data.user[0].toUpperCase() : "?";
-      row.insertBefore(fallback, row.firstChild);
-    };
+      fallback.textContent = userName ? userName[0].toUpperCase() : "?";
+      return fallback;
+    }
 
-    row.appendChild(img);
-  } else {
-    const fallback = document.createElement("div");
-    fallback.className = "avatar-letter";
-    fallback.textContent = data.user ? data.user[0].toUpperCase() : "?";
-    row.appendChild(fallback);
-  }
+    socket.on("chat message", (data) => {
+      const row = document.createElement("div");
+      row.className = "message-row";
 
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
+      let avatarElement;
 
-  const name = document.createElement("div");
-  name.className = "name";
-  name.textContent = data.user;
+      const isValidAvatar =
+        typeof data.avatar === "string" &&
+        data.avatar.startsWith("data:image/");
 
-  const text = document.createElement("div");
-  text.className = "text";
-  text.textContent = data.text;
+      if (isValidAvatar) {
+        const img = document.createElement("img");
+        img.className = "avatar";
+        img.src = data.avatar;
+        img.alt = "avatar";
 
-  bubble.appendChild(name);
-  bubble.appendChild(text);
-  row.appendChild(bubble);
+        img.onerror = function () {
+          img.replaceWith(createFallbackAvatar(data.user));
+        };
 
-  chat.appendChild(row);
-  chat.scrollTop = chat.scrollHeight;
-});
-    msgInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") send();
+        avatarElement = img;
+      } else {
+        avatarElement = createFallbackAvatar(data.user);
+      }
+
+      row.appendChild(avatarElement);
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = data.user || "Unknown";
+
+      const text = document.createElement("div");
+      text.className = "text";
+      text.textContent = data.text || "";
+
+      bubble.appendChild(name);
+      bubble.appendChild(text);
+      row.appendChild(bubble);
+
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+    });
+
+    msgInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        send();
+      }
     });
   </script>
 </body>
